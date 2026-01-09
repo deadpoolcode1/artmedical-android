@@ -1,0 +1,222 @@
+From 8e60d4cf68e8198c470632adf33bf2bb72ae6322 Mon Sep 17 00:00:00 2001
+From: Natalia Kovalenko <natasha.k@variscite.com>
+Date: Sun, 31 Aug 2025 16:07:23 +0200
+Subject: [PATCH 3/3] disable unnecessary hardware on customer carrier
+
+---
+ .../dts/freescale/imx8mp-var-som-symphony.dts | 124 +-----------------
+ 1 file changed, 6 insertions(+), 118 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts b/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts
+index a586e88c4c9b7..d01e8fdbacf11 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts
+@@ -14,43 +14,6 @@ chosen {
+ 		bootargs-append = "console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200 androidboot.console=ttymxc1 androidboot.primary_display=imx-drm moal.mod_para=wifi_mod_para_sd8987.conf";
+ 	};
+ 
+-	gpio-keys {
+-		compatible = "gpio-keys";
+-		status = "okay";
+-
+-		back {
+-			label = "Back";
+-			linux,code = <KEY_BACK>;
+-			gpios = <&pca9534 1 GPIO_ACTIVE_LOW>;
+-			wakeup-source;
+-		};
+-
+-		home {
+-			label = "Home";
+-			linux,code = <KEY_HOMEPAGE>;
+-			gpios = <&pca9534 2 GPIO_ACTIVE_LOW>;
+-			wakeup-source;
+-		};
+-
+-		menu {
+-			label = "Menu";
+-			linux,code = <KEY_MENU>;
+-			gpios = <&pca9534 3 GPIO_ACTIVE_LOW>;
+-			wakeup-source;
+-		};
+-	};
+-
+-	gpio-leds {
+-		compatible = "gpio-leds";
+-		status = "okay";
+-
+-		heartbeat {
+-			label = "Heartbeat";
+-			linux,default-trigger = "heartbeat";
+-			gpios = <&pca9534 0 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-
+ 	pcie0_refclk: pcie0-refclk {
+ 		compatible = "fixed-clock";
+ 		#clock-cells = <0>;
+@@ -145,10 +108,6 @@ sound_hdmi: sound_hdmi {
+ 	};
+ };
+ 
+-&aud2htx {
+-	status = "okay";
+-};
+-
+ &pwm1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pwm1>;
+@@ -188,27 +147,6 @@ typec_dr_sw: endpoint {
+ 		};
+ 	};
+ 
+-	/* GPIO expander */
+-	pca9534: gpio@20 {
+-		compatible = "nxp,pca9534";
+-		reg = <0x20>;
+-		gpio-controller;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_pca9534>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
+-		#gpio-cells = <2>;
+-		wakeup-source;
+-		status = "okay";
+-
+-		usb3_sel_hog {
+-			gpio-hog;
+-			gpios = <4 0>;
+-			output-low;
+-			line-name = "usb3_sel";
+-		};
+-	};
+-
+ 	ov5640_mipi0: ov5640_mipi@3c {
+ 		compatible = "ovti,ov5640";
+ 		reg = <0x3c>;
+@@ -255,7 +193,7 @@ &i2c4 {
+ 	rtc@68 {
+ 		compatible = "dallas,ds1337";
+ 		reg = <0x68>;
+-		status = "okay";
++		status = "disabled";
+ 	};
+ 
+ 	/* Capacitive touch controller */
+@@ -271,36 +209,10 @@ ft5x06_ts: ft5x06_ts@38 {
+ 		touchscreen-inverted-x;
+ 		touchscreen-inverted-y;
+ 		wakeup-source;
+-		status = "okay";
++		status = "disabled";
+ 	};
+ };
+ 
+-&flexcan2 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_flexcan2>;
+-	status = "okay";
+-};
+-
+-&irqsteer_hdmi {
+-	status = "okay";
+-};
+-
+-&hdmi_blk_ctrl {
+-	status = "okay";
+-};
+-
+-&hdmi_pavi {
+-	status = "okay";
+-};
+-
+-&hdmi {
+-	status = "okay";
+-};
+-
+-&hdmiphy {
+-	status = "okay";
+-};
+-
+ /* MIPI-DSI */
+ &lcdif1 {
+ 	status = "disabled";
+@@ -311,13 +223,6 @@ &lcdif2 {
+ 	status = "okay";
+ };
+ 
+-/* HDMI */
+-&lcdif3 {
+-	status = "okay";
+-	thres-low  = <1 2>;	/* (FIFO * 1 / 2) */
+-	thres-high = <3 4>;	/* (FIFO * 3 / 4) */
+-};
+-
+ &ldb {
+ 	status = "okay";
+ 
+@@ -512,13 +417,13 @@ &ecspi2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_ecspi2>;
+ 	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
+-	status = "okay";
++	status = "disabled";
+ 
+ 	spidev@0 {
+ 		compatible = "var,spidev";
+ 		reg = <0>;
+ 		spi-max-frequency = <12000000>;
+-		status = "okay";
++		status = "disabled";
+ 	};
+ };
+ 
+@@ -528,6 +433,7 @@ cam_buf_hog {
+ 		gpios = <6 0>;
+ 		output-low;
+ 		line-name = "cam_buf";
++		status = "disabled";
+ 	};
+ 
+ 	bt_buf_hog: bt_buf_hog {
+@@ -535,23 +441,11 @@ bt_buf_hog: bt_buf_hog {
+ 		gpios = <4 GPIO_ACTIVE_LOW>;
+ 		output-high;
+ 		line-name = "bt_buf";
+-		status = "okay";
++		status = "disabled";
+ 	};
+ };
+ 
+ &iomuxc {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_hog>;
+-
+-	pinctrl_hog: hoggrp {
+-		fsl,pins = <
+-			MX8MP_IOMUXC_HDMI_DDC_SCL__HDMIMIX_HDMI_SCL			0x400001c2
+-			MX8MP_IOMUXC_HDMI_DDC_SDA__HDMIMIX_HDMI_SDA			0x400001c2
+-			MX8MP_IOMUXC_HDMI_HPD__HDMIMIX_HDMI_HPD				0x40000010
+-			MX8MP_IOMUXC_HDMI_CEC__HDMIMIX_HDMI_CEC				0x40000010
+-		>;
+-	};
+-
+ 	pinctrl_pwm1: pwm1grp {
+ 		fsl,pins = <
+ 			MX8MP_IOMUXC_SPDIF_EXT_CLK__PWM1_OUT				0x116
+@@ -723,12 +617,6 @@ MX8MP_IOMUXC_SAI1_RXD7__GPIO4_IO09				0x10
+ 			MX8MP_IOMUXC_SAI1_TXD0__GPIO4_IO12				0x10
+ 			>;
+ 	};
+-
+-	pinctrl_pca9534: pca9534grp {
+-		fsl,pins = <
+-			MX8MP_IOMUXC_GPIO1_IO15__GPIO1_IO15				0xc0
+-		>;
+-	};
+ };
+ 
+ #include "imx8mp-android.dtsi"
+-- 
+2.34.1
+

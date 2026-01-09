@@ -1,0 +1,34 @@
+From 62389ad26ba2e33d9d7cf3d58f3e4c30c4a41997 Mon Sep 17 00:00:00 2001
+From: Natalia Kovalenko <natasha.k@variscite.com>
+Date: Mon, 22 Dec 2025 14:13:25 +0100
+Subject: [PATCH 2/3] Change UART device permissions and SELinux policy for
+ /dev/ttymxc0
+
+---
+ imx8m/dart_mx8mp/sepolicy/artmedical.te | 1 +
+ imx8m/dart_mx8mp/ueventd.nxp.rc         | 1 +
+ 2 files changed, 2 insertions(+)
+ create mode 100644 imx8m/dart_mx8mp/sepolicy/artmedical.te
+
+diff --git a/imx8m/dart_mx8mp/sepolicy/artmedical.te b/imx8m/dart_mx8mp/sepolicy/artmedical.te
+new file mode 100644
+index 0000000..f701895
+--- /dev/null
++++ b/imx8m/dart_mx8mp/sepolicy/artmedical.te
+@@ -0,0 +1 @@
++allow untrusted_app_30 tty_device:chr_file write;
+diff --git a/imx8m/dart_mx8mp/ueventd.nxp.rc b/imx8m/dart_mx8mp/ueventd.nxp.rc
+index 4dce18e..9db21ae 100644
+--- a/imx8m/dart_mx8mp/ueventd.nxp.rc
++++ b/imx8m/dart_mx8mp/ueventd.nxp.rc
+@@ -1,6 +1,7 @@
+ /dev/block/by-name/presistdata   0600   system      system
+ /dev/rfkill                      0660   bluetooth   bluetooth
+ /dev/ttymxc2                     0660   bluetooth   root
++/dev/ttymxc0                     0660   root        system
+ /dev/cec0                        0666   system      graphics
+ /dev/snd/*                       0660   system      audio
+ /dev/video*                      0660   system      camera
+-- 
+2.34.1
+

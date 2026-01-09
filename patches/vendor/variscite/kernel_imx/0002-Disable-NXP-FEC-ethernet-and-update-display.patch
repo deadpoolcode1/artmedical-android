@@ -1,0 +1,128 @@
+From 3518d107af7dc5900c4d0507b61a414f567fccb0 Mon Sep 17 00:00:00 2001
+From: Natalia Kovalenko <natasha.k@variscite.com>
+Date: Mon, 25 Aug 2025 15:16:43 +0200
+Subject: [PATCH] Disable NXP FEC ethernet and update display-timing
+
+---
+ .../dts/freescale/imx8mp-var-som-symphony.dts | 79 ++++---------------
+ 1 file changed, 14 insertions(+), 65 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts b/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts
+index 92f894246d54f..d01e8fdbacf11 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-var-som-symphony.dts
+@@ -42,28 +42,6 @@ reg_usdhc2_vqmmc: regulator-usdhc2-vqmmc {
+ 			  1800000 1>;
+ 	};
+ 
+-	reg_fec_phy_vsel: regulator-fec-phy-vsel {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fec-phy-vsel";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-always-on;
+-		gpio = <&pca9534 6 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-	};
+-
+-	reg_fec_phy: regulator-fec-phy {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fec-phy";
+-		vin-supply = <&reg_fec_phy_vsel>;
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
+-		regulator-enable-ramp-delay = <20000>;
+-		gpio = <&pca9534 7 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-		regulator-always-on;
+-	};
+-
+ 	backlight: backlight {
+ 		compatible = "pwm-backlight";
+ 		pwms = <&pwm1 0 1000000 0>;
+@@ -84,24 +62,24 @@ backlight: backlight {
+ 	};
+ 
+ 	panel {
+-		compatible = "sgd,gktw70sdae4se", "panel-lvds";
++		compatible = "auo,g121ean010", "panel-lvds";
+ 		backlight = <&backlight>;
+-		width-mm = <153>;
+-		height-mm = <87>;
+-		label = "gktw70sdae4se";
+-		data-mapping = "jeida-24";
++		width-mm = <261>;
++		height-mm = <163>;
++		label = "g121ean010";
++		data-mapping = "vesa-24";
+ 		status = "okay";
+ 
+ 		panel-timing {
+-			clock-frequency = <33000000>;
+-			hactive = <800>;
+-			vactive = <480>;
+-			hback-porch = <40>;
+-			hfront-porch = <40>;
+-			vback-porch = <29>;
++			clock-frequency = <74250000>;
++			hactive = <1280>;
++			vactive = <800>;
++			hback-porch = <70>;
++			hfront-porch = <70>;
++			vback-porch = <13>;
+ 			vfront-porch = <13>;
+-			hsync-len = <48>;
+-			vsync-len = <3>;
++			hsync-len = <60>;
++			vsync-len = <12>;
+ 			hsync-active = <0>;
+ 			vsync-active = <0>;
+ 			de-active = <1>;
+@@ -136,35 +114,6 @@ &pwm1 {
+ 	status = "okay";
+ };
+ 
+-&eqos {
+-	mdio {
+-		ethphy1: ethernet-phy@5 {
+-			compatible = "ethernet-phy-ieee802.3-c22";
+-			reg = <5>;
+-			at803x,eee-disabled;
+-			eee-broken-1000t;
+-			reset-gpios = <&pca9534 5 GPIO_ACTIVE_LOW>;
+-			reset-assert-us = <10000>;
+-			reset-deassert-us = <20000>;
+-			vddio-supply = <&vddio1>;
+-
+-			vddio1: vddio-regulator {
+-				regulator-min-microvolt = <1800000>;
+-				regulator-max-microvolt = <1800000>;
+-			};
+-		};
+-	};
+-};
+-
+-&fec {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_fec>;
+-	phy-mode = "rgmii";
+-	phy-handle = <&ethphy1>;
+-	phy-supply = <&reg_fec_phy>;
+-	status = "okay";
+-};
+-
+ &flexspi {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_flexspi0>;
+@@ -278,7 +227,7 @@ &ldb {
+ 	status = "okay";
+ 
+ 	lvds-channel@0 {
+-		fsl,data-mapping = "jeida";
++		fsl,data-mapping = "spwg";
+ 		fsl,data-width = <24>;
+ 		status = "okay";
+ 
+-- 
+2.34.1
+

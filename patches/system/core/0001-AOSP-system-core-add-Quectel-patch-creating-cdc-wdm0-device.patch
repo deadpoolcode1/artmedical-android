@@ -1,0 +1,27 @@
+From 4c86767f23050a8f9aa7d451d0b296864180566b Mon Sep 17 00:00:00 2001
+From: Natalia Kovalenko <natasha.k@variscite.com>
+Date: Mon, 1 Sep 2025 21:48:02 +0200
+Subject: [PATCH] add Quectel patch creating cdc-wdm0 device
+
+---
+ init/devices.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/init/devices.cpp b/init/devices.cpp
+index d29ffd604..3eb5aa6b4 100644
+--- a/init/devices.cpp
++++ b/init/devices.cpp
+@@ -563,6 +563,10 @@ void DeviceHandler::HandleUevent(const Uevent& uevent) {
+             int device_id = uevent.minor % 128 + 1;
+             devpath = StringPrintf("/dev/bus/usb/%03d/%03d", bus_id, device_id);
+         }
++    /* Added by Quectel for mknod /dev/cdc-wdm0*/
++    } else if (uevent.subsystem == "usbmisc" && !uevent.device_name.empty()) {
++            devpath = "/dev/" + uevent.device_name;
++
+     } else if (StartsWith(uevent.subsystem, "usb")) {
+         // ignore other USB events
+         return;
+-- 
+2.34.1
+
