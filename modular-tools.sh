@@ -4,11 +4,12 @@ set -e
 # =============================================================================
 # Art-Medical Android 14 Build Tools
 # VAR-SOM-MX8M-PLUS V1.x on Symphony-Board with BCM WiFi
+#
+# Place this script inside android_build/ directory along with patches/ and uuu/
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ANDROID_ROOT="$HOME/var_imx-android-14.0.0_1.0.0"
-ANDROID_BUILD_DIR="$ANDROID_ROOT/android_build"
+ANDROID_BUILD_DIR="$SCRIPT_DIR"
 OUT="$ANDROID_BUILD_DIR/out/target/product/dart_mx8mp"
 PATCHES_DIR="$SCRIPT_DIR/patches"
 UUU_DIR="$SCRIPT_DIR/uuu"
@@ -82,53 +83,6 @@ EOF'
 }
 
 # =============================================================================
-# Fetch Android Source
-# =============================================================================
-
-fetch() {
-    if [ -d "$ANDROID_BUILD_DIR" ]; then
-        log_warn "Android source already exists at $ANDROID_BUILD_DIR"
-        read -p "Skip fetch? (y/n): " skip
-        [ "$skip" = "y" ] && return 0
-    fi
-    
-    log_info "Fetching Android source..."
-    
-    mkdir -p "$ANDROID_ROOT"
-    cd "$ANDROID_ROOT"
-    
-    # Download NXP Android release package
-    if [ ! -f "$HOME/Downloads/imx-android-14.0.0_1.0.0.tar.gz" ]; then
-        log_info "Downloading NXP Android release package..."
-        curl -o "$HOME/Downloads/imx-android-14.0.0_1.0.0.tar.gz" \
-            https://variscite-public.nyc3.cdn.digitaloceanspaces.com/Android/Android_iMX8_1400_100/imx-android-14.0.0_1.0.0.tar.gz
-    fi
-    
-    tar xvf "$HOME/Downloads/imx-android-14.0.0_1.0.0.tar.gz"
-    
-    # Setup repo tool
-    mkdir -p ~/bin
-    curl -o ~/bin/repo https://commondatastorage.googleapis.com/git-repo-downloads/repo
-    chmod a+x ~/bin/repo
-    export PATH=~/bin:$PATH
-    
-    # Download Android source (this takes a long time)
-    log_info "Downloading Android source (this will take a while)..."
-    source imx-android-14.0.0_1.0.0/imx_android_setup.sh
-    
-    # Apply Variscite patches
-    log_info "Applying Variscite patches..."
-    cd "$ANDROID_BUILD_DIR/device"
-    variscite/scripts/install.sh
-    
-    # Initialize state
-    set_state "vanilla"
-    rm -f "$APPLIED_FILE"
-    
-    log_ok "Android source fetched successfully!"
-}
-
-# =============================================================================
 # Patch Management
 # =============================================================================
 
@@ -184,8 +138,8 @@ patch() {
         return 1
     fi
     
-    if [ ! -d "$ANDROID_BUILD_DIR" ]; then
-        log_error "Android source not found. Run 'fetch' first."
+    if [ ! -d "$PATCHES_DIR" ]; then
+        log_error "Patches directory not found: $PATCHES_DIR"
         return 1
     fi
     
@@ -257,9 +211,6 @@ unpatch() {
     
     log_info "Reverting Art-Medical patches..."
     
-    local reverted=0
-    local failed=0
-    
     # Revert in reverse order
     tac "$APPLIED_FILE" | while IFS=: read -r target patch_path; do
         case "$target" in
@@ -278,11 +229,7 @@ unpatch() {
                 ;;
         esac
         
-        if _revert_single_patch "$patch_path" "$target_dir"; then
-            ((reverted++))
-        else
-            ((failed++))
-        fi
+        _revert_single_patch "$patch_path" "$target_dir"
     done
     
     rm -f "$APPLIED_FILE"
@@ -297,13 +244,7 @@ status() {
     echo "=========================================="
     echo ""
     
-    # Check if source exists
-    if [ -d "$ANDROID_BUILD_DIR" ]; then
-        log_ok "Android source: $ANDROID_BUILD_DIR"
-    else
-        log_warn "Android source: NOT FOUND"
-        echo "       Run './modular-tools.sh fetch' to download"
-    fi
+    log_ok "Android source: $ANDROID_BUILD_DIR"
     
     # Check state
     local state=$(get_state)
@@ -327,10 +268,10 @@ status() {
         echo ""
         echo "Build output: $OUT"
         if [ -f "$OUT/boot.img" ]; then
-            log_ok "boot.img exists"
+            log_ok "boot.img exists ($(stat -c%s "$OUT/boot.img" | numfmt --to=iec))"
         fi
         if [ -f "$OUT/super.img" ]; then
-            log_ok "super.img exists"
+            log_ok "super.img exists ($(stat -c%s "$OUT/super.img" | numfmt --to=iec))"
         fi
     fi
     
@@ -389,11 +330,6 @@ _select_build_variant() {
 }
 
 build() {
-    if [ ! -d "$ANDROID_BUILD_DIR" ]; then
-        log_error "Android source not found. Run 'fetch' first."
-        return 1
-    fi
-    
     _select_build_variant || return 0
     
     log_info "Starting full build ($(get_state) state)..."
@@ -404,11 +340,6 @@ build() {
 }
 
 build_bootimage() {
-    if [ ! -d "$ANDROID_BUILD_DIR" ]; then
-        log_error "Android source not found. Run 'fetch' first."
-        return 1
-    fi
-    
     _select_build_variant || return 0
     
     log_info "Building boot.img only ($(get_state) state)..."
@@ -419,11 +350,6 @@ build_bootimage() {
 }
 
 build_ota() {
-    if [ ! -d "$ANDROID_BUILD_DIR" ]; then
-        log_error "Android source not found. Run 'fetch' first."
-        return 1
-    fi
-    
     _select_build_variant || return 0
     
     log_info "Building OTA package ($(get_state) state)..."
@@ -445,10 +371,11 @@ flash() {
     fi
     
     # Copy UUU files to output directory
-    log_info "Preparing flash files..."
-    cp "$UUU_DIR/emmc_burn_android_imx8mp_var_som_1_x_symphony.lst" "$OUT/"
-    cp "$UUU_DIR/uuu" "$OUT/"
-    chmod +x "$OUT/uuu"
+    if [ -d "$UUU_DIR" ]; then
+        log_info "Preparing flash files..."
+        cp "$UUU_DIR/emmc_burn_android_imx8mp_var_som_1_x_symphony.lst" "$OUT/" 2>/dev/null || true
+        cp "$UUU_DIR/uuu" "$OUT/" 2>/dev/null && chmod +x "$OUT/uuu" || true
+    fi
     
     cd "$OUT"
     
@@ -474,7 +401,11 @@ flash() {
     [ "$confirm" != "yes" ] && { log_info "Flash cancelled."; return 0; }
     
     log_info "Starting UUU flash..."
-    sudo ./uuu emmc_burn_android_imx8mp_var_som_1_x_symphony.lst
+    if [ -x "./uuu" ]; then
+        sudo ./uuu emmc_burn_android_imx8mp_var_som_1_x_symphony.lst
+    else
+        sudo uuu emmc_burn_android_imx8mp_var_som_1_x_symphony.lst
+    fi
     
     log_ok "Flash complete!"
 }
@@ -512,7 +443,7 @@ sdcard() {
     [ "$confirm" != "yes" ] && { log_info "Cancelled."; return 0; }
     
     log_info "Creating bootable SD card..."
-    sudo ./var-mksdcard.sh -f imx8mp-var-som-1.x-symphony "$device"
+    sudo "$ANDROID_BUILD_DIR/var-mksdcard.sh" -f imx8mp-var-som-1.x-symphony "$device"
     sync
     
     log_ok "SD card creation complete!"
@@ -563,10 +494,6 @@ help() {
     echo "VAR-SOM-MX8M-PLUS V1.x Symphony (BCM WiFi)"
     echo "=========================================="
     echo ""
-    echo "Setup & Fetch:"
-    echo "  setup           - Install required packages and JDK"
-    echo "  fetch           - Download Android source from Variscite"
-    echo ""
     echo "Patch Management:"
     echo "  status          - Show current state and applied patches"
     echo "  patch           - Apply Art-Medical patches"
@@ -582,6 +509,7 @@ help() {
     echo "  sdcard /dev/sdX - Create bootable SD card"
     echo ""
     echo "Maintenance:"
+    echo "  setup           - Install required packages"
     echo "  clean           - Clean build output"
     echo "  help            - Show this help"
     echo ""
