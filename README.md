@@ -7,7 +7,7 @@ Based on Variscite's Android 14.0.0_1.0.0 release for i.MX8M Plus.
 ## Quick Start
 
 ```bash
-git clone <your-repo-url> artmedical-android
+git clone <your-repo-url> 
 cd artmedical-android
 ./modular-tools.sh setup
 ./modular-tools.sh fetch
