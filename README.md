@@ -65,6 +65,7 @@ The script automatically applies or reverts patches as needed.
 ### device/variscite
 - `0001-imx8mp-var-dart-Add-initial-radio...` - Quectel EG25-G/GL RIL driver
 - `0002-Change-UART-device-permissions...` - UART permissions for /dev/ttymxc0
+- `0003-imx8mp-var-dart-force-AOT-dexopt...` - Force `pm.dexopt.install=speed` so installed APKs are AOT compiled (apps without cloud profiles otherwise stay interpreted)
 
 ### vendor/variscite/kernel_imx
 - `0001-modem-setup-in-defconfig.patch` - Kernel config for USB modem

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Art-Medical <ilan@kamacode.com>
+Date: Sun, 19 Apr 2026 08:03:37 +0300
+Subject: [PATCH 3/3] imx8mp-var-dart: force AOT dexopt (speed) for installed
+ apps
+
+Changes pm.dexopt.* filters from the default speed-profile to speed so
+that apps installed via adb install / PackageInstaller are AOT compiled
+instead of running in interpreter mode when no cloud profile is shipped
+in the APK (which is the common case for in-house apps). Without this,
+installed APKs sit in the 'run-from-apk' state where every method is
+interpreted + JIT'd on first hit, producing noticeably sluggish UI.
+
+---
+ imx8m/dart_mx8mp/dart_mx8mp.mk | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/imx8m/dart_mx8mp/dart_mx8mp.mk b/imx8m/dart_mx8mp/dart_mx8mp.mk
+--- a/imx8m/dart_mx8mp/dart_mx8mp.mk
++++ b/imx8m/dart_mx8mp/dart_mx8mp.mk
+@@ -504,6 +504,13 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+ PRODUCT_PROPERTY_OVERRIDES += \
+     vendor.typec.legacy=true
+
++PRODUCT_PROPERTY_OVERRIDES += \
++    pm.dexopt.install=speed \
++    pm.dexopt.install-fast=speed \
++    pm.dexopt.first-boot=speed \
++    pm.dexopt.boot-after-ota=speed \
++    pm.dexopt.bg-dexopt=speed
++
+ # -------@block_multimedia_codec-------
+ # Vendor seccomp policy files for media components:
+ PRODUCT_COPY_FILES += \
+--
+2.34.1
+
