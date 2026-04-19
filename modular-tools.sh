@@ -159,9 +159,9 @@ patch() {
             [ -f "$p" ] || continue
             if _apply_single_patch "$p" "$ANDROID_BUILD_DIR/system/core"; then
                 echo "system/core:$p" >> "$APPLIED_FILE"
-                ((applied++))
+                applied=$((applied+1))
             else
-                ((failed++))
+                failed=$((failed+1))
             fi
         done
     fi
@@ -172,9 +172,9 @@ patch() {
             [ -f "$p" ] || continue
             if _apply_single_patch "$p" "$ANDROID_BUILD_DIR/device/variscite"; then
                 echo "device/variscite:$p" >> "$APPLIED_FILE"
-                ((applied++))
+                applied=$((applied+1))
             else
-                ((failed++))
+                failed=$((failed+1))
             fi
         done
     fi
@@ -185,9 +185,9 @@ patch() {
             [ -f "$p" ] || continue
             if _apply_single_patch "$p" "$ANDROID_BUILD_DIR/vendor/variscite/kernel_imx"; then
                 echo "vendor/variscite/kernel_imx:$p" >> "$APPLIED_FILE"
-                ((applied++))
+                applied=$((applied+1))
             else
-                ((failed++))
+                failed=$((failed+1))
             fi
         done
     fi
@@ -445,8 +445,31 @@ sdcard() {
     log_info "Creating bootable SD card..."
     sudo "$ANDROID_BUILD_DIR/var-mksdcard.sh" -f imx8mp-var-som-1.x-symphony "$device"
     sync
-    
+
     log_ok "SD card creation complete!"
+}
+
+# =============================================================================
+# Recovery SD card builder (packages client-shippable .wic.zst)
+# =============================================================================
+
+build_sdcard_recovery() {
+    local helper="$ANDROID_BUILD_DIR/artmedical-android/sdcard/build-sdcard-recovery.sh"
+    if [ ! -x "$helper" ]; then
+        # Fallback: look in the working patches-dir layout
+        helper="$ANDROID_BUILD_DIR/sdcard/build-sdcard-recovery.sh"
+    fi
+    if [ ! -x "$helper" ]; then
+        log_error "build-sdcard-recovery.sh not found."
+        log_error "Expected at: $ANDROID_BUILD_DIR/artmedical-android/sdcard/build-sdcard-recovery.sh"
+        return 1
+    fi
+    if [ ! -d "$OUT" ]; then
+        log_error "Build output not found at $OUT. Run './modular-tools.sh build' first."
+        return 1
+    fi
+    log_info "Building client-shippable recovery SD-card image..."
+    "$helper" "$@"
 }
 
 # =============================================================================
@@ -506,7 +529,13 @@ help() {
     echo ""
     echo "Flash:"
     echo "  flash           - Flash to eMMC via UUU"
-    echo "  sdcard /dev/sdX - Create bootable SD card"
+    echo "  sdcard /dev/sdX - Create bootable SD card directly on a device"
+    echo ""
+    echo "Client delivery:"
+    echo "  build_sdcard_recovery [--variant <name>] [--output <path>]"
+    echo "                  - Build a .wic.zst recovery SD card image to ship"
+    echo "                    to clients (wraps Variscite's Yocto recovery card"
+    echo "                    with your latest Android build inside)."
     echo ""
     echo "Maintenance:"
     echo "  setup           - Install required packages"

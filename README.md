@@ -44,6 +44,7 @@ android_build/
 | `./modular-tools.sh build_ota` | Build OTA package |
 | `./modular-tools.sh flash` | Flash to eMMC via UUU |
 | `./modular-tools.sh sdcard /dev/sdX` | Create bootable SD card |
+| `./modular-tools.sh build_sdcard_recovery` | Build a client-shippable `.wic.zst` recovery SD image |
 | `./modular-tools.sh setup` | Install build dependencies |
 | `./modular-tools.sh clean` | Clean build output |
 | `./modular-tools.sh help` | Show help |
@@ -90,6 +91,33 @@ The script automatically applies or reverts patches as needed.
 4. Insert SD card into board
 5. Set boot mode to SD card
 6. Power on
+
+## Client delivery (recovery SD card image)
+
+To ship a new version to a client, produce a self-contained `.wic.zst` that
+writes Android to the device's eMMC on first boot:
+
+```
+./modular-tools.sh build_sdcard_recovery
+```
+
+This wraps Variscite's prebuilt Yocto recovery SD image (auto-downloaded once
+and cached in `sdcard/base/`) with your most recent Android build. Output
+lands in `sdcard/artmedical-sdcard-<date>.wic.zst` (~5 GB).
+
+Client instructions:
+
+```
+zstd -d artmedical-sdcard-<date>.wic.zst -o artmedical-sdcard.wic
+sudo dd if=artmedical-sdcard.wic of=/dev/sdX bs=1M status=progress conv=fsync
+```
+
+Insert the SD card, set boot mode to **SD card**, power on. `install_android.sh`
+runs automatically, flashes eMMC, then powers down. Remove the card, switch
+boot mode back to **eMMC**, power on — the board now runs your Android.
+
+See `sdcard/build-sdcard-recovery.sh --help` for variant overrides and other
+options. The target is VAR-SOM-MX8M-PLUS V1.x on Symphony-Board by default.
 
 ## Requirements
 

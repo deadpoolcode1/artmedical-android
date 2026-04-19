@@ -1,0 +1,4 @@
+base/
+*.wic
+*.wic.zst
+*.wic.gz
